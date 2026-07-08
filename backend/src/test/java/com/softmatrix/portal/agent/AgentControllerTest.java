@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AgentController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, com.softmatrix.portal.TestOAuth2Config.class})
 class AgentControllerTest {
 
     @Autowired MockMvc mvc;
