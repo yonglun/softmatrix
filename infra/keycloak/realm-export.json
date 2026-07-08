@@ -1,0 +1,46 @@
+{
+  "realm": "softmatrix",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "portal",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "portal-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:8080/login/oauth2/code/keycloak"],
+      "webOrigins": ["http://localhost:8080"],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "email": "admin@softmatrix.local",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "admin123", "temporary": false }
+      ]
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "firstName": "Business",
+      "lastName": "User",
+      "email": "user@softmatrix.local",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "user123", "temporary": false }
+      ]
+    }
+  ]
+}
