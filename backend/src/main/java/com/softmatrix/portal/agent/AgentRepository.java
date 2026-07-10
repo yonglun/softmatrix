@@ -9,29 +9,23 @@ import java.util.UUID;
 
 public interface AgentRepository extends JpaRepository<AgentEntity, UUID> {
 
-    /**
-     * 按可选条件过滤 Agent 列表。任何参数为 null 时忽略该条件。
-     * TODO(AM-T6): 会被 Task 6 用带 Testcontainers 测试的实现替换/细化。
-     */
     @Query(value = """
-            select * from agent a
-            where (:category is null or a.category = :category)
-              and (:status is null or a.status = :status)
-              and (:keyword is null or a.name ilike concat('%', :keyword, '%')
-                   or a.description ilike concat('%', :keyword, '%'))
-              and (:tag is null or :tag = any(a.tags))
-            order by a.created_at desc
+            SELECT * FROM agent
+            WHERE (:category IS NULL OR category = :category)
+              AND (:status   IS NULL OR status = :status)
+              AND (:keyword  IS NULL OR name ILIKE '%' || :keyword || '%')
+              AND (:tag      IS NULL OR :tag = ANY(tags))
+            ORDER BY created_at DESC
             """, nativeQuery = true)
     List<AgentEntity> search(@Param("category") String category,
-                              @Param("status") String status,
-                              @Param("keyword") String keyword,
-                              @Param("tag") String tag);
+                             @Param("status") String status,
+                             @Param("keyword") String keyword,
+                             @Param("tag") String tag);
 
-    @Query(value = "select distinct category from agent where category is not null order by category",
+    @Query(value = "SELECT DISTINCT category FROM agent WHERE category IS NOT NULL ORDER BY category",
             nativeQuery = true)
     List<String> findDistinctCategories();
 
-    @Query(value = "select distinct t from agent, unnest(tags) as t order by t",
-            nativeQuery = true)
+    @Query(value = "SELECT DISTINCT unnest(tags) AS tag FROM agent ORDER BY tag", nativeQuery = true)
     List<String> findDistinctTags();
 }
