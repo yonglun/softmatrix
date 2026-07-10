@@ -24,6 +24,20 @@ public class AgentEntity {
     @Column(nullable = false, length = 100)
     private String owner;
 
+    @Column(length = 50)
+    private String category;
+
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]", nullable = false)
+    private String[] tags = new String[0];
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private AgentStatus status = AgentStatus.DRAFT;
+
+    @Column(name = "published_at")
+    private OffsetDateTime publishedAt;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -53,6 +67,14 @@ public class AgentEntity {
     public void setFlowiseChatflowId(String v) { this.flowiseChatflowId = v; }
     public String getOwner() { return owner; }
     public void setOwner(String owner) { this.owner = owner; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public String[] getTags() { return tags; }
+    public void setTags(String[] tags) { this.tags = tags == null ? new String[0] : tags; }
+    public AgentStatus getStatus() { return status; }
+    public void setStatus(AgentStatus status) { this.status = status; }
+    public OffsetDateTime getPublishedAt() { return publishedAt; }
+    public void setPublishedAt(OffsetDateTime publishedAt) { this.publishedAt = publishedAt; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
 }
