@@ -36,8 +36,8 @@ class AgentControllerTest {
     @Test
     void list_returns_agents_when_authenticated() throws Exception {
         when(service.list()).thenReturn(List.of(new AgentResponse(
-                UUID.randomUUID(), "A", "d", "cf1", "admin",
-                OffsetDateTime.now(), OffsetDateTime.now())));
+                UUID.randomUUID(), "A", "d", null, List.of(), "cf1", AgentStatus.DRAFT, "admin",
+                null, OffsetDateTime.now(), OffsetDateTime.now())));
 
         mvc.perform(get("/api/agents").with(oidcLogin()))
            .andExpect(status().isOk())
@@ -48,8 +48,8 @@ class AgentControllerTest {
     void create_uses_username_as_owner() throws Exception {
         when(service.create(org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.eq("admin")))
-            .thenReturn(new AgentResponse(UUID.randomUUID(), "A", "d", "cf1", "admin",
-                    OffsetDateTime.now(), OffsetDateTime.now()));
+            .thenReturn(new AgentResponse(UUID.randomUUID(), "A", "d", null, List.of(), "cf1", AgentStatus.DRAFT, "admin",
+                    null, OffsetDateTime.now(), OffsetDateTime.now()));
 
         mvc.perform(post("/api/agents")
                 .with(oidcLogin().idToken(t -> t.claim("preferred_username", "admin")))
