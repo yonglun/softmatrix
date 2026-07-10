@@ -65,6 +65,17 @@ class AgentServiceTest {
     }
 
     @Test
+    void create_rejects_when_chatflow_not_found() {
+        when(validator.chatflowExists("bad")).thenReturn(false);
+        AgentRequest req = new AgentRequest("A", "d", null, null, "bad");
+
+        assertThatThrownBy(() -> service.create(req, "admin"))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("code", "INVALID_CHATFLOW");
+        verify(repo, never()).save(any());
+    }
+
+    @Test
     void update_ignores_chatflow_and_status() {
         AgentEntity e = stored(AgentStatus.PUBLISHED);
         e.setFlowiseChatflowId("original");
