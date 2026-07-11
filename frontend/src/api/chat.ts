@@ -26,6 +26,10 @@ export async function streamChat(
     window.location.href = '/oauth2/authorization/keycloak';
     return;
   }
+  if (res.status === 409) {
+    cb.onError('该 Agent 未发布,无法运行');
+    return;
+  }
   if (!res.ok || !res.body) {
     cb.onError('运行失败,请重试');
     return;
