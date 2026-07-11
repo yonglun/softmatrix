@@ -27,6 +27,10 @@ public class ChatController {
     @PostMapping(value = "/{id}/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chat(@PathVariable UUID id, @Valid @RequestBody ChatRequest req) {
         AgentEntity agent = agentService.find(id);
+        if (agent.getStatus() != com.softmatrix.portal.agent.AgentStatus.PUBLISHED) {
+            throw new ApiException(HttpStatus.CONFLICT, "AGENT_NOT_RUNNABLE",
+                    "该 Agent 未发布,无法运行");
+        }
         return flowiseClient.streamPrediction(
                         agent.getFlowiseChatflowId(), req.sessionId(), req.message())
                 .onErrorMap(ex -> new ApiException(HttpStatus.BAD_GATEWAY,

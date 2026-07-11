@@ -2,6 +2,7 @@ package com.softmatrix.portal.chat;
 
 import com.softmatrix.portal.agent.AgentEntity;
 import com.softmatrix.portal.agent.AgentService;
+import com.softmatrix.portal.agent.AgentStatus;
 import com.softmatrix.portal.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,13 @@ class ChatControllerTest {
     @MockBean AgentService agentService;
     @MockBean FlowiseClient flowiseClient;
 
+    private AgentEntity agent(AgentStatus status) {
+        AgentEntity e = new AgentEntity();
+        e.setFlowiseChatflowId("cf1");
+        e.setStatus(status);
+        return e;
+    }
+
     @Test
     void chat_requires_auth() throws Exception {
         mvc.perform(post("/api/agents/{id}/chat", UUID.randomUUID())
@@ -36,16 +44,22 @@ class ChatControllerTest {
     }
 
     @Test
-    void chat_streams_tokens() throws Exception {
+    void chat_rejected_when_not_published() throws Exception {
         UUID id = UUID.randomUUID();
-        AgentEntity e = new AgentEntity();
-        e.setFlowiseChatflowId("cf1");
-        when(agentService.find(id)).thenReturn(e);
-        when(flowiseClient.streamPrediction(eq("cf1"), eq("s1"), eq("hi")))
-                .thenReturn(Flux.just("Hello", " world"));
+        when(agentService.find(id)).thenReturn(agent(AgentStatus.DRAFT));
+        mvc.perform(post("/api/agents/{id}/chat", id).with(oidcLogin())
+                .contentType("application/json")
+                .content("{\"sessionId\":\"s1\",\"message\":\"hi\"}"))
+           .andExpect(status().isConflict());
+    }
 
-        mvc.perform(post("/api/agents/{id}/chat", id)
-                .with(oidcLogin())
+    @Test
+    void chat_streams_when_published() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(agentService.find(id)).thenReturn(agent(AgentStatus.PUBLISHED));
+        when(flowiseClient.streamPrediction(eq("cf1"), eq("s1"), eq("hi")))
+                .thenReturn(Flux.just("Hello"));
+        mvc.perform(post("/api/agents/{id}/chat", id).with(oidcLogin())
                 .contentType("application/json")
                 .content("{\"sessionId\":\"s1\",\"message\":\"hi\"}"))
            .andExpect(status().isOk())
