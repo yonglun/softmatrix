@@ -80,6 +80,7 @@ public class FlowiseClient implements ChatflowValidator {
             java.util.Map<String, Object> req = new java.util.HashMap<>();
             req.put("name", name);
             req.put("flowData", flowData);
+            req.put("type", "CHATFLOW");
             String body = webClient.post()
                     .uri("/api/v1/chatflows")
                     .header("Authorization", "Bearer " + apiKey)

@@ -86,6 +86,24 @@ class FlowiseClientTest {
     }
 
     @Test
+    void createChatflow_sends_type_field() throws InterruptedException {
+        // Flowise's create-chatflow endpoint rejects requests missing "type"
+        // with 400 "Invalid Chatflow Type" — verified against a real running
+        // Flowise instance during end-to-end testing. This test pins the
+        // request body shape so a regression here fails fast, not just in prod.
+        server.enqueue(new okhttp3.mockwebserver.MockResponse().setResponseCode(200)
+                .setBody("{\"id\":\"new-cf\"}")
+                .addHeader("Content-Type", "application/json"));
+
+        com.fasterxml.jackson.databind.node.TextNode flowData =
+                com.fasterxml.jackson.databind.node.TextNode.valueOf("{\"nodes\":[]}");
+        client.createChatflow("Imported", flowData);
+
+        okhttp3.mockwebserver.RecordedRequest recorded = server.takeRequest();
+        assertThat(recorded.getBody().readUtf8()).contains("\"type\":\"CHATFLOW\"");
+    }
+
+    @Test
     void getChatflow_throws_502_on_error() {
         server.enqueue(new okhttp3.mockwebserver.MockResponse().setResponseCode(500));
         assertThatThrownBy(() -> client.getChatflow("cf1"))
