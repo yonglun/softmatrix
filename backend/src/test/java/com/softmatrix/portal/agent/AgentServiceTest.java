@@ -17,13 +17,15 @@ class AgentServiceTest {
 
     AgentRepository repo;
     ChatflowValidator validator;
+    com.softmatrix.portal.chat.FlowiseClient flowise;
     AgentService service;
 
     @BeforeEach
     void setUp() {
         repo = mock(AgentRepository.class);
         validator = mock(ChatflowValidator.class);
-        service = new AgentService(repo, validator);
+        flowise = mock(com.softmatrix.portal.chat.FlowiseClient.class);
+        service = new AgentService(repo, validator, flowise);
         when(repo.save(any(AgentEntity.class))).thenAnswer(inv -> {
             AgentEntity e = inv.getArgument(0);
             if (e.getId() == null) e.setId(UUID.randomUUID());

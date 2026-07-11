@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,10 +17,13 @@ public class AgentService {
 
     private final AgentRepository repo;
     private final ChatflowValidator validator;
+    private final com.softmatrix.portal.chat.FlowiseClient flowise;
 
-    public AgentService(AgentRepository repo, ChatflowValidator validator) {
+    public AgentService(AgentRepository repo, ChatflowValidator validator,
+                        com.softmatrix.portal.chat.FlowiseClient flowise) {
         this.repo = repo;
         this.validator = validator;
+        this.flowise = flowise;
     }
 
     public List<AgentResponse> list(String category, String status, String keyword, String tag) {
@@ -82,6 +86,38 @@ public class AgentService {
     public AgentEntity find(UUID id) {
         return repo.findById(id).orElseThrow(() ->
                 new ApiException(HttpStatus.NOT_FOUND, "AGENT_NOT_FOUND", "Agent 不存在"));
+    }
+
+    public com.softmatrix.portal.agent.dto.AgentPackage export(UUID id) {
+        AgentEntity e = find(id);
+        com.fasterxml.jackson.databind.JsonNode cf = flowise.getChatflow(e.getFlowiseChatflowId());
+        var agentMeta = new com.softmatrix.portal.agent.dto.AgentPackage.AgentMeta(
+                e.getName(), e.getDescription(), e.getCategory(),
+                e.getTags() == null ? java.util.List.of() : java.util.Arrays.asList(e.getTags()));
+        var flowMeta = new com.softmatrix.portal.agent.dto.AgentPackage.FlowMeta(
+                cf.path("name").asText(e.getName()), cf.path("flowData"));
+        return new com.softmatrix.portal.agent.dto.AgentPackage("1", agentMeta, flowMeta);
+    }
+
+    public AgentResponse importPackage(com.softmatrix.portal.agent.dto.AgentPackage pkg, String owner) {
+        if (pkg.agent() == null || pkg.agent().name() == null || pkg.agent().name().isBlank()
+                || pkg.flow() == null || pkg.flow().flowData() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "IMPORT_INVALID",
+                    "导入文件结构非法:缺少 agent.name 或 flow.flowData");
+        }
+        String flowName = pkg.flow().name() == null ? pkg.agent().name() : pkg.flow().name();
+        String newChatflowId = flowise.createChatflow(flowName, pkg.flow().flowData());
+
+        AgentEntity e = new AgentEntity();
+        e.setName(pkg.agent().name());
+        e.setDescription(pkg.agent().description());
+        e.setCategory(pkg.agent().category());
+        e.setTags(pkg.agent().tags() == null ? new String[0]
+                : pkg.agent().tags().toArray(new String[0]));
+        e.setFlowiseChatflowId(newChatflowId);
+        e.setOwner(owner);
+        e.setStatus(AgentStatus.DRAFT);
+        return AgentResponse.from(repo.save(e));
     }
 
     void requireChatflow(String chatflowId) {

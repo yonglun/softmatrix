@@ -58,4 +58,22 @@ public class AgentController {
 
     @PostMapping("/{id}/withdraw")
     public AgentResponse withdraw(@PathVariable UUID id) { return service.withdraw(id); }
+
+    @GetMapping("/{id}/export")
+    public org.springframework.http.ResponseEntity<com.softmatrix.portal.agent.dto.AgentPackage>
+            export(@PathVariable UUID id) {
+        com.softmatrix.portal.agent.dto.AgentPackage pkg = service.export(id);
+        String filename = "softmatrix-agent-" + id + ".json";
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .body(pkg);
+    }
+
+    @PostMapping("/import")
+    public AgentResponse importAgent(
+            @RequestBody com.softmatrix.portal.agent.dto.AgentPackage pkg,
+            @AuthenticationPrincipal OidcUser user) {
+        return service.importPackage(pkg, user.getPreferredUsername());
+    }
 }
