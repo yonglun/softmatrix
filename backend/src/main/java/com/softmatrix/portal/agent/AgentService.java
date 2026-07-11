@@ -22,12 +22,6 @@ public class AgentService {
         this.validator = validator;
     }
 
-    // TODO(AM-T7): 临时兼容重载,供旧版 AgentController#list() 调用;
-    // Task 7 改用带过滤参数的 list(...) 后可移除。
-    public List<AgentResponse> list() {
-        return list(null, null, null, null);
-    }
-
     public List<AgentResponse> list(String category, String status, String keyword, String tag) {
         AgentStatus st = parseStatus(status);
         return repo.search(emptyToNull(category), st == null ? null : st.name(),

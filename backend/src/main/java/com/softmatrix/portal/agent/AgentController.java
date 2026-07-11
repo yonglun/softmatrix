@@ -21,9 +21,18 @@ public class AgentController {
     }
 
     @GetMapping
-    public List<AgentResponse> list() {
-        return service.list();
+    public List<AgentResponse> list(@RequestParam(required = false) String category,
+                                    @RequestParam(required = false) String status,
+                                    @RequestParam(required = false) String keyword,
+                                    @RequestParam(required = false) String tag) {
+        return service.list(category, status, keyword, tag);
     }
+
+    @GetMapping("/categories")
+    public List<String> categories() { return service.listCategories(); }
+
+    @GetMapping("/tags")
+    public List<String> tags() { return service.listTags(); }
 
     @PostMapping
     public AgentResponse create(@Valid @RequestBody AgentRequest req,
@@ -40,4 +49,13 @@ public class AgentController {
     public void delete(@PathVariable UUID id) {
         service.delete(id);
     }
+
+    @PostMapping("/{id}/publish")
+    public AgentResponse publish(@PathVariable UUID id) { return service.publish(id); }
+
+    @PostMapping("/{id}/disable")
+    public AgentResponse disable(@PathVariable UUID id) { return service.disable(id); }
+
+    @PostMapping("/{id}/withdraw")
+    public AgentResponse withdraw(@PathVariable UUID id) { return service.withdraw(id); }
 }
