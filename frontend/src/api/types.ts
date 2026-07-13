@@ -40,3 +40,8 @@ export interface AgentPackage {
   agent: { name: string; description?: string; category?: string; tags?: string[] };
   flow: { name: string; flowData: unknown };
 }
+
+// GET /api/config 下发的运行时配置
+export interface AppConfig {
+  designerBaseUrl: string;
+}

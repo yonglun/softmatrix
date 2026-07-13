@@ -6,6 +6,11 @@ export async function listAgents(filters: AgentFilters = {}): Promise<Agent[]> {
   return data;
 }
 
+export async function getAgent(id: string): Promise<Agent> {
+  const { data } = await client.get(`/api/agents/${id}`);
+  return data;
+}
+
 export async function listCategories(): Promise<string[]> {
   const { data } = await client.get('/api/agents/categories');
   return data;
