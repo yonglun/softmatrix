@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -132,5 +133,20 @@ class AgentServiceTest {
     void reenable_from_disabled_to_published() {
         AgentEntity e = stored(AgentStatus.DISABLED);
         assertThat(service.publish(e.getId()).status()).isEqualTo(AgentStatus.PUBLISHED);
+    }
+
+    @Test
+    void get_returns_agent_response() {
+        AgentEntity e = stored(AgentStatus.DRAFT);
+        assertThat(service.get(e.getId()).id()).isEqualTo(e.getId());
+    }
+
+    @Test
+    void get_unknown_id_is_404() {
+        UUID id = UUID.randomUUID();
+        when(repo.findById(id)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.get(id))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("code", "AGENT_NOT_FOUND");
     }
 }

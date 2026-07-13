@@ -90,6 +90,8 @@ public class AgentService {
         return AgentResponse.from(repo.save(e));
     }
 
+    public AgentResponse get(UUID id) { return AgentResponse.from(find(id)); }
+
     public AgentEntity find(UUID id) {
         return repo.findById(id).orElseThrow(() ->
                 new ApiException(HttpStatus.NOT_FOUND, "AGENT_NOT_FOUND", "Agent 不存在"));
