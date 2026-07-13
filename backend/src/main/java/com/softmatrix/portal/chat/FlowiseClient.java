@@ -57,6 +57,46 @@ public class FlowiseClient implements ChatflowValidator {
                 .filter(s -> !s.isEmpty());
     }
 
+    /** 取 Chatflow 完整定义(含 flowData),供导出。失败映射为 502。 */
+    public JsonNode getChatflow(String chatflowId) {
+        try {
+            String body = webClient.get()
+                    .uri("/api/v1/chatflows/{id}", chatflowId)
+                    .header("Authorization", "Bearer " + apiKey)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            return mapper.readTree(body);
+        } catch (Exception e) {
+            throw new com.softmatrix.portal.common.ApiException(
+                    org.springframework.http.HttpStatus.BAD_GATEWAY,
+                    "FLOWISE_ERROR", "读取 Flowise 流失败");
+        }
+    }
+
+    /** 在 Flowise 新建 Chatflow,返回新 id,供导入。失败映射为 502。 */
+    public String createChatflow(String name, JsonNode flowData) {
+        try {
+            java.util.Map<String, Object> req = new java.util.HashMap<>();
+            req.put("name", name);
+            req.put("flowData", flowData);
+            req.put("type", "CHATFLOW");
+            String body = webClient.post()
+                    .uri("/api/v1/chatflows")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(req)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            return mapper.readTree(body).path("id").asText();
+        } catch (Exception e) {
+            throw new com.softmatrix.portal.common.ApiException(
+                    org.springframework.http.HttpStatus.BAD_GATEWAY,
+                    "FLOWISE_ERROR", "在 Flowise 新建流失败");
+        }
+    }
+
     private String extractToken(String dataLine) {
         try {
             JsonNode node = mapper.readTree(dataLine);

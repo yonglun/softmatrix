@@ -14,6 +14,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -25,37 +27,51 @@ class AgentControllerTest {
 
     @Autowired MockMvc mvc;
     @MockBean AgentService service;
-    @MockBean ChatflowValidator validator; // SecurityConfig 无需,但避免上下文缺 bean
+    @MockBean ChatflowValidator validator;
 
-    @Test
-    void list_requires_auth() throws Exception {
-        mvc.perform(get("/api/agents"))
-           .andExpect(status().isUnauthorized());
+    private AgentResponse sample(AgentStatus status) {
+        return new AgentResponse(UUID.randomUUID(), "A", "d", "客服", List.of("faq"),
+                "cf1", status, "admin", null, OffsetDateTime.now(), OffsetDateTime.now());
     }
 
     @Test
-    void list_returns_agents_when_authenticated() throws Exception {
-        when(service.list()).thenReturn(List.of(new AgentResponse(
-                UUID.randomUUID(), "A", "d", "cf1", "admin",
-                OffsetDateTime.now(), OffsetDateTime.now())));
+    void list_requires_auth() throws Exception {
+        mvc.perform(get("/api/agents")).andExpect(status().isUnauthorized());
+    }
 
-        mvc.perform(get("/api/agents").with(oidcLogin()))
+    @Test
+    void list_passes_filters() throws Exception {
+        when(service.list("客服", "DRAFT", "k", "faq")).thenReturn(List.of(sample(AgentStatus.DRAFT)));
+        mvc.perform(get("/api/agents?category=客服&status=DRAFT&keyword=k&tag=faq").with(oidcLogin()))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$[0].name").value("A"));
+           .andExpect(jsonPath("$[0].status").value("DRAFT"));
     }
 
     @Test
     void create_uses_username_as_owner() throws Exception {
-        when(service.create(org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.eq("admin")))
-            .thenReturn(new AgentResponse(UUID.randomUUID(), "A", "d", "cf1", "admin",
-                    OffsetDateTime.now(), OffsetDateTime.now()));
-
+        when(service.create(any(), eq("admin"))).thenReturn(sample(AgentStatus.DRAFT));
         mvc.perform(post("/api/agents")
                 .with(oidcLogin().idToken(t -> t.claim("preferred_username", "admin")))
                 .contentType("application/json")
-                .content("{\"name\":\"A\",\"description\":\"d\",\"flowiseChatflowId\":\"cf1\"}"))
+                .content("{\"name\":\"A\",\"flowiseChatflowId\":\"cf1\",\"tags\":[\"faq\"]}"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.owner").value("admin"));
+    }
+
+    @Test
+    void publish_endpoint() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.publish(id)).thenReturn(sample(AgentStatus.PUBLISHED));
+        mvc.perform(post("/api/agents/{id}/publish", id).with(oidcLogin()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.status").value("PUBLISHED"));
+    }
+
+    @Test
+    void categories_endpoint() throws Exception {
+        when(service.listCategories()).thenReturn(List.of("客服", "法务"));
+        mvc.perform(get("/api/agents/categories").with(oidcLogin()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$[0]").value("客服"));
     }
 }
