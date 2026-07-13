@@ -6,6 +6,7 @@ import com.softmatrix.portal.chat.ChatflowValidator;
 import com.softmatrix.portal.common.ApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -58,11 +59,26 @@ class AgentServiceTest {
     }
 
     @Test
-    void create_rejects_blank_chatflow() {
-        AgentRequest req = new AgentRequest("A", "d", null, null, "  ");
+    void create_without_chatflow_auto_creates_blank_flow() {
+        when(flowise.createChatflow(eq("A"), any())).thenReturn("new-cf");
+        AgentRequest req = new AgentRequest("A", "d", null, null, null);
+
+        AgentResponse res = service.create(req, "admin");
+
+        assertThat(res.flowiseChatflowId()).isEqualTo("new-cf");
+        assertThat(res.status()).isEqualTo(AgentStatus.DRAFT);
+        verify(validator, never()).chatflowExists(any());
+    }
+
+    @Test
+    void create_without_chatflow_propagates_flowise_error() {
+        when(flowise.createChatflow(any(), any())).thenThrow(new ApiException(
+                HttpStatus.BAD_GATEWAY, "FLOWISE_ERROR", "在 Flowise 新建流失败"));
+        AgentRequest req = new AgentRequest("A", null, null, null, "");
+
         assertThatThrownBy(() -> service.create(req, "admin"))
                 .isInstanceOf(ApiException.class)
-                .hasMessageContaining("Chatflow");
+                .hasFieldOrPropertyWithValue("code", "FLOWISE_ERROR");
         verify(repo, never()).save(any());
     }
 

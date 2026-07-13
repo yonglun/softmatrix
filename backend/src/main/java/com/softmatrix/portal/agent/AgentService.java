@@ -19,6 +19,10 @@ public class AgentService {
     private final ChatflowValidator validator;
     private final com.softmatrix.portal.chat.FlowiseClient flowise;
 
+    /** Flowise 的 flowData 是 JSON 字符串;空白画布形态与导入功能一致。 */
+    private static final com.fasterxml.jackson.databind.JsonNode BLANK_FLOW_DATA =
+            com.fasterxml.jackson.databind.node.TextNode.valueOf("{\"nodes\":[],\"edges\":[]}");
+
     public AgentService(AgentRepository repo, ChatflowValidator validator,
                         com.softmatrix.portal.chat.FlowiseClient flowise) {
         this.repo = repo;
@@ -37,18 +41,21 @@ public class AgentService {
 
     public List<String> listTags() { return repo.findDistinctTags(); }
 
+    /** 留空 chatflowId 时自动在 Flowise 创建空白流并绑定;有值时校验后登记。 */
     public AgentResponse create(AgentRequest req, String owner) {
+        String chatflowId;
         if (req.flowiseChatflowId() == null || req.flowiseChatflowId().isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_CHATFLOW",
-                    "创建 Agent 必须提供 Chatflow ID");
+            chatflowId = flowise.createChatflow(req.name(), BLANK_FLOW_DATA);
+        } else {
+            requireChatflow(req.flowiseChatflowId());
+            chatflowId = req.flowiseChatflowId();
         }
-        requireChatflow(req.flowiseChatflowId());
         AgentEntity e = new AgentEntity();
         e.setName(req.name());
         e.setDescription(req.description());
         e.setCategory(req.category());
         e.setTags(toArray(req.tags()));
-        e.setFlowiseChatflowId(req.flowiseChatflowId());
+        e.setFlowiseChatflowId(chatflowId);
         e.setOwner(owner);
         e.setStatus(AgentStatus.DRAFT);
         return AgentResponse.from(repo.save(e));
