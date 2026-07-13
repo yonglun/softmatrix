@@ -29,4 +29,6 @@ spring:
 
 flowise:
   base-url: http://localhost:3000
+  # 浏览器可达的设计器地址；生产环境与 base-url（内网）常常不同，缺省回落到 base-url
+  designer-base-url: http://localhost:3000
   api-key: portal-flowise-key
