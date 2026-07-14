@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Table, Button, Modal, Form, Input, Select, AutoComplete, Space, Tag, Popconfirm, message,
+  Table, Button, Modal, Form, Input, Select, AutoComplete, Space, Tag, Popconfirm, message, Collapse,
 } from 'antd';
 import type { Agent, AgentRequest, AgentFilters, AgentStatus, AgentPackage } from '../api/types';
 import {
@@ -96,6 +96,7 @@ export default function AgentListPage() {
     }
     btns.push(<Button key="edit" size="small" type="link" onClick={() => openEdit(a)}>编辑</Button>);
     if (a.status === 'DRAFT' || a.status === 'DISABLED') {
+      btns.push(<Button key="design" size="small" type="link" onClick={() => navigate(`/agents/${a.id}/design`)}>编排</Button>);
       btns.push(<Button key="pub" size="small" type="link" onClick={() => runAction(() => publishAgent(a.id), a.status === 'DISABLED' ? '已重新启用' : '已发布')}>{a.status === 'DISABLED' ? '重新启用' : '发布'}</Button>);
     }
     if (a.status === 'PUBLISHED') {
@@ -161,10 +162,17 @@ export default function AgentListPage() {
               options={tags.map((t) => ({ value: t }))} />
           </Form.Item>
           {!editing && (
-            <Form.Item name="flowiseChatflowId" label="Flowise Chatflow ID"
-              rules={[{ required: true, max: 64 }]}>
-              <Input placeholder="从 Flowise 复制的 Chatflow ID" />
-            </Form.Item>
+            <Collapse ghost items={[{
+              key: 'advanced',
+              label: '高级选项:绑定已有 Chatflow',
+              children: (
+                <Form.Item name="flowiseChatflowId" label="Flowise Chatflow ID"
+                  rules={[{ max: 64 }]}
+                  extra="留空将自动在 Flowise 创建空白流程">
+                  <Input placeholder="从 Flowise 复制的 Chatflow ID" />
+                </Form.Item>
+              ),
+            }]} />
           )}
         </Form>
       </Modal>
