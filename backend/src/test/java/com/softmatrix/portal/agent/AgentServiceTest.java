@@ -6,8 +6,10 @@ import com.softmatrix.portal.chat.ChatflowValidator;
 import com.softmatrix.portal.common.ApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -58,11 +60,26 @@ class AgentServiceTest {
     }
 
     @Test
-    void create_rejects_blank_chatflow() {
-        AgentRequest req = new AgentRequest("A", "d", null, null, "  ");
+    void create_without_chatflow_auto_creates_blank_flow() {
+        when(flowise.createChatflow(eq("A"), any())).thenReturn("new-cf");
+        AgentRequest req = new AgentRequest("A", "d", null, null, null);
+
+        AgentResponse res = service.create(req, "admin");
+
+        assertThat(res.flowiseChatflowId()).isEqualTo("new-cf");
+        assertThat(res.status()).isEqualTo(AgentStatus.DRAFT);
+        verify(validator, never()).chatflowExists(any());
+    }
+
+    @Test
+    void create_without_chatflow_propagates_flowise_error() {
+        when(flowise.createChatflow(any(), any())).thenThrow(new ApiException(
+                HttpStatus.BAD_GATEWAY, "FLOWISE_ERROR", "在 Flowise 新建流失败"));
+        AgentRequest req = new AgentRequest("A", null, null, null, "");
+
         assertThatThrownBy(() -> service.create(req, "admin"))
                 .isInstanceOf(ApiException.class)
-                .hasMessageContaining("Chatflow");
+                .hasFieldOrPropertyWithValue("code", "FLOWISE_ERROR");
         verify(repo, never()).save(any());
     }
 
@@ -116,5 +133,20 @@ class AgentServiceTest {
     void reenable_from_disabled_to_published() {
         AgentEntity e = stored(AgentStatus.DISABLED);
         assertThat(service.publish(e.getId()).status()).isEqualTo(AgentStatus.PUBLISHED);
+    }
+
+    @Test
+    void get_returns_agent_response() {
+        AgentEntity e = stored(AgentStatus.DRAFT);
+        assertThat(service.get(e.getId()).id()).isEqualTo(e.getId());
+    }
+
+    @Test
+    void get_unknown_id_is_404() {
+        UUID id = UUID.randomUUID();
+        when(repo.findById(id)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.get(id))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("code", "AGENT_NOT_FOUND");
     }
 }

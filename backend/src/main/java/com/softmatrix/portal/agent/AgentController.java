@@ -34,6 +34,9 @@ public class AgentController {
     @GetMapping("/tags")
     public List<String> tags() { return service.listTags(); }
 
+    @GetMapping("/{id}")
+    public AgentResponse get(@PathVariable UUID id) { return service.get(id); }
+
     @PostMapping
     public AgentResponse create(@Valid @RequestBody AgentRequest req,
                                 @AuthenticationPrincipal OidcUser user) {

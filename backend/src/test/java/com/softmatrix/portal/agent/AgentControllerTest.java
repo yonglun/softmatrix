@@ -74,4 +74,13 @@ class AgentControllerTest {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$[0]").value("客服"));
     }
+
+    @Test
+    void get_by_id_endpoint() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.get(id)).thenReturn(sample(AgentStatus.DRAFT));
+        mvc.perform(get("/api/agents/{id}", id).with(oidcLogin()))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.name").value("A"));
+    }
 }
