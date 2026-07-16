@@ -29,6 +29,30 @@ class AgentControllerTest {
     @MockBean AgentService service;
     @MockBean ChatflowValidator validator;
     @MockBean com.softmatrix.portal.auth.CustomOidcUserService oidcUserService;
+    @MockBean(name = "perm") com.softmatrix.portal.rbac.PermissionChecker perm;
+
+    @org.junit.jupiter.api.BeforeEach
+    void allowAll() {
+        when(perm.has(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+    }
+
+    @Test
+    void create_without_agent_manage_is_403() throws Exception {
+        when(perm.has("AGENT_MANAGE")).thenReturn(false);
+        mvc.perform(post("/api/agents")
+                .with(oidcLogin())
+                .contentType("application/json")
+                .content("{\"name\":\"A\"}"))
+           .andExpect(status().isForbidden())
+           .andExpect(jsonPath("$.code").value("PERMISSION_DENIED"));
+    }
+
+    @Test
+    void publish_without_agent_publish_is_403() throws Exception {
+        when(perm.has("AGENT_PUBLISH")).thenReturn(false);
+        mvc.perform(post("/api/agents/{id}/publish", UUID.randomUUID()).with(oidcLogin()))
+           .andExpect(status().isForbidden());
+    }
 
     private AgentResponse sample(AgentStatus status) {
         return new AgentResponse(UUID.randomUUID(), "A", "d", "客服", List.of("faq"),

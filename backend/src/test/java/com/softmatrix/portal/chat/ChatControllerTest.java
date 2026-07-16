@@ -28,6 +28,22 @@ class ChatControllerTest {
     @MockBean AgentService agentService;
     @MockBean FlowiseClient flowiseClient;
     @MockBean com.softmatrix.portal.auth.CustomOidcUserService oidcUserService;
+    @MockBean(name = "perm") com.softmatrix.portal.rbac.PermissionChecker perm;
+
+    @org.junit.jupiter.api.BeforeEach
+    void allowAll() {
+        when(perm.has(anyString())).thenReturn(true);
+    }
+
+    @Test
+    void chat_without_agent_run_is_403() throws Exception {
+        when(perm.has("AGENT_RUN")).thenReturn(false);
+        mvc.perform(post("/api/agents/{id}/chat", UUID.randomUUID())
+                .with(oidcLogin())
+                .contentType("application/json")
+                .content("{\"sessionId\":\"s\",\"message\":\"hi\"}"))
+           .andExpect(status().isForbidden());
+    }
 
     private AgentEntity agent(AgentStatus status) {
         AgentEntity e = new AgentEntity();
