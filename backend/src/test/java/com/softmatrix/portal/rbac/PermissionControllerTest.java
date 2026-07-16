@@ -19,6 +19,7 @@ class PermissionControllerTest {
 
     @Autowired MockMvc mvc;
     @MockBean(name = "perm") PermissionChecker perm;
+    @MockBean com.softmatrix.portal.auth.CustomOidcUserService oidcUserService;
 
     @Test
     void without_permission_is_403_with_code() throws Exception {

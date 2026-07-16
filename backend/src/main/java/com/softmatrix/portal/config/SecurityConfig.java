@@ -14,13 +14,15 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+            com.softmatrix.portal.auth.CustomOidcUserService oidcUserService) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
             .oauth2Login(oauth -> oauth
+                .userInfoEndpoint(u -> u.oidcUserService(oidcUserService))
                 .defaultSuccessUrl("http://localhost:5173/", true)
             )
             .logout(logout -> logout

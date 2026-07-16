@@ -27,6 +27,7 @@ class ChatControllerTest {
     @Autowired MockMvc mvc;
     @MockBean AgentService agentService;
     @MockBean FlowiseClient flowiseClient;
+    @MockBean com.softmatrix.portal.auth.CustomOidcUserService oidcUserService;
 
     private AgentEntity agent(AgentStatus status) {
         AgentEntity e = new AgentEntity();

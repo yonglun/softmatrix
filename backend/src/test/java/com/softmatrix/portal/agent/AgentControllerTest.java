@@ -28,6 +28,7 @@ class AgentControllerTest {
     @Autowired MockMvc mvc;
     @MockBean AgentService service;
     @MockBean ChatflowValidator validator;
+    @MockBean com.softmatrix.portal.auth.CustomOidcUserService oidcUserService;
 
     private AgentResponse sample(AgentStatus status) {
         return new AgentResponse(UUID.randomUUID(), "A", "d", "客服", List.of("faq"),

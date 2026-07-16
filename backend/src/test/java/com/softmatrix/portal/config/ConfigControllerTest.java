@@ -20,6 +20,9 @@ class ConfigControllerTest {
 
     @Autowired MockMvc mvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    com.softmatrix.portal.auth.CustomOidcUserService oidcUserService;
+
     @Test
     void requires_auth() throws Exception {
         mvc.perform(get("/api/config")).andExpect(status().isUnauthorized());
