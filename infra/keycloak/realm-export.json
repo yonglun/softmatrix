@@ -17,6 +17,16 @@
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:5173/*"
       }
+    },
+    {
+      "clientId": "portal-admin",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "portal-admin-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [
@@ -41,6 +51,14 @@
       "credentials": [
         { "type": "password", "value": "user123", "temporary": false }
       ]
+    },
+    {
+      "username": "service-account-portal-admin",
+      "enabled": true,
+      "serviceAccountClientId": "portal-admin",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users"]
+      }
     }
   ]
 }
