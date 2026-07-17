@@ -1,3 +1,5 @@
 package com.softmatrix.portal.auth;
 
-public record UserInfo(String username, String name) {}
+import java.util.List;
+
+public record UserInfo(String username, String name, List<String> permissions) {}

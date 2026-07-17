@@ -20,8 +20,9 @@ services:
     image: quay.io/keycloak/keycloak:25.0
     command: ["start-dev", "--import-realm"]
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Keycloak 25 用 KEYCLOAK_ADMIN(KC_BOOTSTRAP_ADMIN_* 是 26 的语法,25 不识别)
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: postgres

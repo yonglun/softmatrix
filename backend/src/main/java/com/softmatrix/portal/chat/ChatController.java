@@ -25,6 +25,7 @@ public class ChatController {
     }
 
     @PostMapping(value = "/{id}/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @org.springframework.security.access.prepost.PreAuthorize("@perm.has('AGENT_RUN')")
     public Flux<String> chat(@PathVariable UUID id, @Valid @RequestBody ChatRequest req) {
         AgentEntity agent = agentService.find(id);
         if (agent.getStatus() != com.softmatrix.portal.agent.AgentStatus.PUBLISHED) {

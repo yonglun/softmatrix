@@ -31,6 +31,8 @@ public class TestOAuth2Config {
                 .tokenUri("http://localhost:8081/realms/softmatrix/protocol/openid-connect/token")
                 .userInfoUri("http://localhost:8081/realms/softmatrix/protocol/openid-connect/userinfo")
                 .jwkSetUri("http://localhost:8081/realms/softmatrix/protocol/openid-connect/certs")
+                .providerConfigurationMetadata(java.util.Map.of("end_session_endpoint",
+                        "http://localhost:8081/realms/softmatrix/protocol/openid-connect/logout"))
                 .userNameAttributeName("preferred_username")
                 .build();
         return new InMemoryClientRegistrationRepository(keycloak);

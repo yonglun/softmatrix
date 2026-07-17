@@ -10,6 +10,7 @@ import {
   listCategories, listTags, exportAgent, importAgent,
 } from '../api/agents';
 import { STATUS_LABEL } from './agentStatus';
+import { useHasPermission } from '../auth/UserContext';
 
 export default function AgentListPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -22,6 +23,7 @@ export default function AgentListPage() {
   const [form] = Form.useForm<AgentRequest>();
   const fileInput = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const has = useHasPermission();
 
   const reload = useCallback(() => {
     setLoading(true);
@@ -91,32 +93,40 @@ export default function AgentListPage() {
 
   const actionsFor = (a: Agent) => {
     const btns = [] as JSX.Element[];
-    if (a.status === 'PUBLISHED') {
+    if (a.status === 'PUBLISHED' && has('AGENT_RUN')) {
       btns.push(<Button key="run" size="small" type="link" onClick={() => navigate(`/agents/${a.id}/chat`)}>运行</Button>);
     }
-    btns.push(<Button key="edit" size="small" type="link" onClick={() => openEdit(a)}>编辑</Button>);
-    if (a.status === 'DRAFT' || a.status === 'DISABLED') {
-      btns.push(<Button key="design" size="small" type="link" onClick={() => navigate(`/agents/${a.id}/design`)}>编排</Button>);
-      btns.push(<Button key="pub" size="small" type="link" onClick={() => runAction(() => publishAgent(a.id), a.status === 'DISABLED' ? '已重新启用' : '已发布')}>{a.status === 'DISABLED' ? '重新启用' : '发布'}</Button>);
+    if (has('AGENT_MANAGE')) {
+      btns.push(<Button key="edit" size="small" type="link" onClick={() => openEdit(a)}>编辑</Button>);
     }
-    if (a.status === 'PUBLISHED') {
+    if (a.status === 'DRAFT' || a.status === 'DISABLED') {
+      if (has('AGENT_DESIGN')) {
+        btns.push(<Button key="design" size="small" type="link" onClick={() => navigate(`/agents/${a.id}/design`)}>编排</Button>);
+      }
+      if (has('AGENT_PUBLISH')) {
+        btns.push(<Button key="pub" size="small" type="link" onClick={() => runAction(() => publishAgent(a.id), a.status === 'DISABLED' ? '已重新启用' : '已发布')}>{a.status === 'DISABLED' ? '重新启用' : '发布'}</Button>);
+      }
+    }
+    if (a.status === 'PUBLISHED' && has('AGENT_PUBLISH')) {
       btns.push(<Button key="dis" size="small" type="link" onClick={() => runAction(() => disableAgent(a.id), '已停用')}>停用</Button>);
       btns.push(<Button key="wd" size="small" type="link" onClick={() => runAction(() => withdrawAgent(a.id), '已撤回为草稿')}>撤回</Button>);
     }
-    btns.push(<Button key="exp" size="small" type="link" onClick={() => doExport(a)}>导出</Button>);
-    btns.push(
-      <Popconfirm key="del" title="确认删除?" onConfirm={() => runAction(() => deleteAgent(a.id), '已删除')}>
-        <Button size="small" type="link" danger>删除</Button>
-      </Popconfirm>
-    );
+    if (has('AGENT_MANAGE')) {
+      btns.push(<Button key="exp" size="small" type="link" onClick={() => doExport(a)}>导出</Button>);
+      btns.push(
+        <Popconfirm key="del" title="确认删除?" onConfirm={() => runAction(() => deleteAgent(a.id), '已删除')}>
+          <Button size="small" type="link" danger>删除</Button>
+        </Popconfirm>
+      );
+    }
     return <Space size={0} wrap>{btns}</Space>;
   };
 
   return (
     <>
       <Space style={{ marginBottom: 16 }} wrap>
-        <Button type="primary" onClick={openCreate}>新建 Agent</Button>
-        <Button onClick={() => fileInput.current?.click()}>导入</Button>
+        {has('AGENT_MANAGE') && <Button type="primary" onClick={openCreate}>新建 Agent</Button>}
+        {has('AGENT_MANAGE') && <Button onClick={() => fileInput.current?.click()}>导入</Button>}
         <input ref={fileInput} type="file" accept="application/json" style={{ display: 'none' }}
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportFile(f); e.target.value = ''; }} />
         <Input.Search allowClear placeholder="名称关键字" style={{ width: 160 }}
