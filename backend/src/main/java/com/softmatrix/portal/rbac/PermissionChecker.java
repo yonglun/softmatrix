@@ -42,7 +42,9 @@ public class PermissionChecker {
             Set<String> cached = (Set<String>) attrs.getAttribute(key, RequestAttributes.SCOPE_REQUEST);
             if (cached != null) return cached;
         }
+        // 已停用用户立即失去全部权限(门户会话即便还在,所有 API 也会 403)
         Set<String> perms = users.findByUsername(username)
+                .filter(com.softmatrix.portal.user.AppUserEntity::isEnabled)
                 .map(u -> u.getRoles().stream()
                         .flatMap(r -> r.getPermissions().stream())
                         .collect(Collectors.toSet()))

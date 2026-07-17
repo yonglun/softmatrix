@@ -52,6 +52,16 @@ class PermissionCheckerTest {
     }
 
     @Test
+    void disabled_user_has_no_permissions() {
+        AppUserEntity u = userWithRoles(role("AGENT_VIEW"));
+        u.setEnabled(false);
+        when(users.findByUsername("alice")).thenReturn(Optional.of(u));
+        loginAs("alice");
+
+        assertThat(checker.has("AGENT_VIEW")).isFalse();
+    }
+
+    @Test
     void unknown_user_has_no_permissions() {
         when(users.findByUsername("ghost")).thenReturn(Optional.empty());
         loginAs("ghost");

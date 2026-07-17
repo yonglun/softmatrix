@@ -15,7 +15,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-            com.softmatrix.portal.auth.CustomOidcUserService oidcUserService) throws Exception {
+            com.softmatrix.portal.auth.CustomOidcUserService oidcUserService,
+            org.springframework.security.oauth2.client.registration.ClientRegistrationRepository clientRegistrations)
+            throws Exception {
+        // RP-Initiated Logout:同时终结 Keycloak SSO 会话,否则登出后会被静默重新登录
+        var oidcLogout = new org.springframework.security.oauth2.client.oidc.web.logout
+                .OidcClientInitiatedLogoutSuccessHandler(clientRegistrations);
+        oidcLogout.setPostLogoutRedirectUri("http://localhost:5173/");
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/**").authenticated()
@@ -26,7 +32,7 @@ public class SecurityConfig {
                 .defaultSuccessUrl("http://localhost:5173/", true)
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("http://localhost:5173/")
+                .logoutSuccessHandler(oidcLogout)
             )
             // 对 /api/** 未认证返回 401,而不是 302 重定向到 Keycloak
             .exceptionHandling(ex -> ex

@@ -22,10 +22,22 @@ class MeControllerTest {
     @MockBean(name = "perm") com.softmatrix.portal.rbac.PermissionChecker perm;
     @MockBean CustomOidcUserService oidcUserService;
 
+    @Autowired
+    org.springframework.security.oauth2.client.registration.ClientRegistrationRepository registrations;
+
     @Test
     void unauthenticated_returns_401() throws Exception {
         mvc.perform(get("/api/me"))
            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void logout_redirects_to_keycloak_end_session() throws Exception {
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/logout")
+                .with(oidcLogin().clientRegistration(registrations.findByRegistrationId("keycloak"))))
+           .andExpect(status().is3xxRedirection())
+           .andExpect(header().string("Location",
+                   org.hamcrest.Matchers.containsString("/protocol/openid-connect/logout")));
     }
 
     @Test

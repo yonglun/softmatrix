@@ -36,11 +36,13 @@ export default function UserPanel({ departmentId, departments, onUsersChanged }:
       .then(setUsers).finally(() => setLoading(false));
   }, [departmentId, keyword]);
   useEffect(() => { reload(); }, [reload]);
+  // 用户弹窗打开时重新拉取岗位/角色,避免"岗位管理"里新增后下拉框数据陈旧
   useEffect(() => {
+    if (!userModalOpen && !rolesTarget) return;
     listPositions().then(setPositions);
     if (has('ROLE_VIEW')) listRoles().then(setRoles);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userModalOpen, rolesTarget]);
 
   const openCreate = () => {
     setEditing(null);
